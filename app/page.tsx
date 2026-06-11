@@ -22,13 +22,15 @@ export default function Home() {
   const innerBoxRef = useRef<SVGRectElement>(null);
   const outerBoxRef = useRef<SVGRectElement>(null);
   const boxRef = useRef<SVGImageElement>(null);
+  const overlayRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const innerBox = innerBoxRef.current;
     const outerBox = outerBoxRef.current;
     const image = imageRef.current;
     const box = boxRef.current;
-    if (!innerBox || !outerBox || !image || !box) return;
+    const overlay = overlayRef.current;
+    if (!innerBox || !outerBox || !image || !box || !overlay) return;
 
     const innerLen = innerBox.getTotalLength();
     const outerLen = outerBox.getTotalLength();
@@ -42,8 +44,9 @@ export default function Home() {
       strokeDashoffset: outerLen,
     });
 
-    gsap.set(image, { scale: 1.08, clipPath: "inset(0% 0% 0% 0% round 0px)", willChange: "clip-path, transform" });
+    gsap.set(image, { scale: 1.08 });
     gsap.set(box, { opacity: 0 });
+    gsap.set(overlay, { opacity: 0 });
 
     const tl = gsap.timeline({ delay: 0.3 });
     const duration = 1.2;
@@ -79,22 +82,13 @@ export default function Home() {
       },
     }, duration);
 
-    // 3. Then crop + shrink after box is fully visible
-    const cropStart = duration + fadeDuration;
-    const cropDuration = 0.8;
+    // 3. Fade in color overlay to cover image outside the box
+    tl.to(overlay, {
+      opacity: 1,
+      duration: 0.8,
+      ease: "power2.out",
+    }, duration + fadeDuration);
 
-    tl.to(image, {
-      clipPath: `inset(${(593 / 1920) * 100}% ${(174 / 1080) * 100}% ${(594 / 1920) * 100}% ${(173 / 1080) * 100}% round 6px)`,
-      duration: cropDuration,
-      ease: cubicBezier(0.33, 1, 0.68, 1),
-    }, cropStart);
-
-    tl.to(box, {
-      scale: 841 / 937,
-      svgOrigin: "539.5 959.5",
-      duration: cropDuration,
-      ease: cubicBezier(0.16, 1, 0.3, 1),
-    }, cropStart);
 
     return () => {
       tl.kill();
@@ -111,6 +105,23 @@ export default function Home() {
           fill
           className="object-cover"
           priority
+        />
+
+        {/* Color overlay that fades in to cover image outside the box */}
+        <div
+          ref={overlayRef}
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: "#C1D4E5",
+            clipPath: `polygon(
+              0% 0%, 100% 0%, 100% 100%, 0% 100%, 0% 0%,
+              ${(173 / 1080) * 100}% ${(593 / 1920) * 100}%,
+              ${(173 / 1080) * 100}% ${(1326 / 1920) * 100}%,
+              ${(906 / 1080) * 100}% ${(1326 / 1920) * 100}%,
+              ${(906 / 1080) * 100}% ${(593 / 1920) * 100}%,
+              ${(173 / 1080) * 100}% ${(593 / 1920) * 100}%
+            )`,
+          }}
         />
 
         {/* SVG overlay for line-drawing animation */}
