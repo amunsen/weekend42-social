@@ -1,4 +1,4 @@
-import puppeteer from "puppeteer";
+import puppeteer from "puppeteer-core";
 import { execSync } from "child_process";
 import fs from "fs";
 import path from "path";

@@ -20,7 +20,6 @@ export default function Home() {
   const [imageScale, setImageScale] = useState(100);
   const [isExporting, setIsExporting] = useState(false);
   const [exportLog, setExportLog] = useState<string[]>([]);
-  const isLocal = typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
 
   const imageScaleRef = useRef(imageScale);
   imageScaleRef.current = imageScale;
@@ -130,56 +129,124 @@ export default function Home() {
   };
 
   const exportVideo = async () => {
+    if (typeof VideoEncoder === "undefined") {
+      alert("Dein Browser unterstützt kein Video-Encoding. Bitte Chrome oder Safari verwenden.");
+      return;
+    }
+
+    const storyEl = storyRef.current;
+    if (!storyEl) return;
+
     setIsExporting(true);
     setExportLog(["Export gestartet..."]);
+
+    const WIDTH = 1080;
+    const HEIGHT = 1920;
+    const FPS = 30;
+    const HOLD_FRAMES = 15;
+
     try {
-      const res = await fetch("/api/export", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bgColor, objectPos, imageScale, imageSrc }),
+      // Build a fresh paused timeline
+      const tl = buildTimeline();
+      if (!tl) throw new Error("Timeline konnte nicht erstellt werden");
+      tl.pause();
+
+      const totalDuration = tl.totalDuration();
+      const totalFrames = Math.ceil(totalDuration * FPS) + HOLD_FRAMES;
+
+      setExportLog((prev) => [
+        ...prev,
+        `Animation: ${totalDuration.toFixed(2)}s | ${totalFrames} Frames @ ${FPS}fps`,
+      ]);
+
+      // Setup mp4 muxer + video encoder
+      const { Muxer, ArrayBufferTarget } = await import("mp4-muxer");
+      const { toCanvas } = await import("html-to-image");
+
+      const target = new ArrayBufferTarget();
+      const muxer = new Muxer({
+        target,
+        video: { codec: "avc", width: WIDTH, height: HEIGHT },
+        fastStart: "in-memory",
       });
 
-      const reader = res.body?.getReader();
-      const decoder = new TextDecoder();
-      if (!reader) throw new Error("No response stream");
+      const encoder = new VideoEncoder({
+        output: (chunk, meta) => muxer.addVideoChunk(chunk, meta),
+        error: (e) => console.error("Encoder error:", e),
+      });
 
-      let buffer = "";
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
+      encoder.configure({
+        codec: "avc1.640033",
+        width: WIDTH,
+        height: HEIGHT,
+        bitrate: 8_000_000,
+        framerate: FPS,
+      });
 
-        const lines = buffer.split("\n\n");
-        buffer = lines.pop() || "";
+      // Determine scale factor from displayed size to 1080x1920
+      const rect = storyEl.getBoundingClientRect();
+      const pixelRatio = WIDTH / rect.width;
 
-        for (const line of lines) {
-          const match = line.match(/^data: (.+)$/m);
-          if (!match) continue;
-          const msg = JSON.parse(match[1]) as string;
+      setExportLog((prev) => [...prev, "Frames werden aufgenommen..."]);
 
-          if (msg === "[done]") {
-            setExportLog((prev) => [...prev, "Download wird gestartet..."]);
-            // Trigger download
-            const a = document.createElement("a");
-            a.href = "/api/export";
-            a.download = "story.mp4";
-            a.click();
-            setExportLog((prev) => [...prev, "Fertig!"]);
-          } else if (msg.startsWith("[failed]")) {
-            setExportLog((prev) => [...prev, `Fehler: ${msg}`]);
-          } else {
-            setExportLog((prev) => {
-              // Replace last line if it's a progress update (frame capture)
-              if (msg.includes("Capturing frame") && prev.length > 0 && prev[prev.length - 1].includes("Capturing frame")) {
-                return [...prev.slice(0, -1), msg];
-              }
-              return [...prev, msg];
-            });
-          }
+      for (let i = 0; i < totalFrames; i++) {
+        const time = Math.min(i / FPS, totalDuration);
+        tl.totalTime(time);
+
+        // Wait for render
+        await new Promise((r) => requestAnimationFrame(r));
+        await new Promise((r) => requestAnimationFrame(r));
+
+        const canvas = await toCanvas(storyEl, {
+          canvasWidth: WIDTH,
+          canvasHeight: HEIGHT,
+          pixelRatio,
+        });
+
+        const frame = new VideoFrame(canvas, {
+          timestamp: i * (1_000_000 / FPS),
+          duration: 1_000_000 / FPS,
+        });
+
+        encoder.encode(frame, { keyFrame: i % 30 === 0 });
+        frame.close();
+
+        if (i % 5 === 0) {
+          setExportLog((prev) => {
+            const msg = `Frame ${i + 1}/${totalFrames} (${Math.round(((i + 1) / totalFrames) * 100)}%)`;
+            if (prev.length > 0 && prev[prev.length - 1].startsWith("Frame ")) {
+              return [...prev.slice(0, -1), msg];
+            }
+            return [...prev, msg];
+          });
+          // Yield to UI so progress updates render
+          await new Promise((r) => setTimeout(r, 0));
         }
       }
+
+      setExportLog((prev) => [...prev, "Video wird encodiert..."]);
+      await encoder.flush();
+      encoder.close();
+      muxer.finalize();
+
+      // Download
+      const blob = new Blob([target.buffer], { type: "video/mp4" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "story.mp4";
+      a.click();
+      URL.revokeObjectURL(url);
+
+      setExportLog((prev) => [...prev, "Fertig!"]);
+
+      // Replay animation normally
+      buildTimeline();
     } catch (err) {
-      setExportLog((prev) => [...prev, `Fehler: ${err instanceof Error ? err.message : "Unbekannt"}`]);
+      setExportLog((prev) => [
+        ...prev,
+        `Fehler: ${err instanceof Error ? err.message : "Unbekannt"}`,
+      ]);
     }
     setIsExporting(false);
   };
@@ -270,24 +337,20 @@ export default function Home() {
             Replay
           </button>
 
-          {isLocal && (
-            <>
-              <button
-                onClick={exportVideo}
-                disabled={isExporting}
-                className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-500 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isExporting ? "Exportiert..." : "Export MP4"}
-              </button>
+          <button
+            onClick={exportVideo}
+            disabled={isExporting}
+            className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-500 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isExporting ? "Exportiert..." : "Export MP4"}
+          </button>
 
-              {exportLog.length > 0 && (
-                <div className="mt-1 max-h-40 overflow-y-auto rounded-lg bg-gray-900 p-2 text-xs text-green-400 font-mono leading-relaxed">
-                  {exportLog.map((line, i) => (
-                    <div key={i}>{line}</div>
-                  ))}
-                </div>
-              )}
-            </>
+          {exportLog.length > 0 && (
+            <div className="mt-1 max-h-40 overflow-y-auto rounded-lg bg-gray-900 p-2 text-xs text-green-400 font-mono leading-relaxed">
+              {exportLog.map((line, i) => (
+                <div key={i}>{line}</div>
+              ))}
+            </div>
           )}
         </div>
       )}
