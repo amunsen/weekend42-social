@@ -20,6 +20,7 @@ export default function Home() {
   const [imageScale, setImageScale] = useState(100);
   const [isExporting, setIsExporting] = useState(false);
   const [exportLog, setExportLog] = useState<string[]>([]);
+  const isLocal = typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
 
   const imageScaleRef = useRef(imageScale);
   imageScaleRef.current = imageScale;
@@ -269,20 +270,24 @@ export default function Home() {
             Replay
           </button>
 
-          <button
-            onClick={exportVideo}
-            disabled={isExporting}
-            className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-500 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isExporting ? "Exportiert..." : "Export MP4"}
-          </button>
+          {isLocal && (
+            <>
+              <button
+                onClick={exportVideo}
+                disabled={isExporting}
+                className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-500 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isExporting ? "Exportiert..." : "Export MP4"}
+              </button>
 
-          {exportLog.length > 0 && (
-            <div className="mt-1 max-h-40 overflow-y-auto rounded-lg bg-gray-900 p-2 text-xs text-green-400 font-mono leading-relaxed">
-              {exportLog.map((line, i) => (
-                <div key={i}>{line}</div>
-              ))}
-            </div>
+              {exportLog.length > 0 && (
+                <div className="mt-1 max-h-40 overflow-y-auto rounded-lg bg-gray-900 p-2 text-xs text-green-400 font-mono leading-relaxed">
+                  {exportLog.map((line, i) => (
+                    <div key={i}>{line}</div>
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </div>
       )}
