@@ -1,65 +1,155 @@
+"use client";
+
 import Image from "next/image";
+import { useEffect, useRef } from "react";
+import gsap from "gsap";
+
+function cubicBezier(x1: number, y1: number, x2: number, y2: number) {
+  return (t: number) => {
+    let start = 0, end = 1;
+    for (let i = 0; i < 20; i++) {
+      const mid = (start + end) / 2;
+      const x = 3 * (1 - mid) ** 2 * mid * x1 + 3 * (1 - mid) * mid ** 2 * x2 + mid ** 3;
+      if (x < t) start = mid; else end = mid;
+    }
+    const m = (start + end) / 2;
+    return 3 * (1 - m) ** 2 * m * y1 + 3 * (1 - m) * m ** 2 * y2 + m ** 3;
+  };
+}
 
 export default function Home() {
+  const imageRef = useRef<HTMLImageElement>(null);
+  const innerBoxRef = useRef<SVGRectElement>(null);
+  const outerBoxRef = useRef<SVGRectElement>(null);
+  const boxRef = useRef<SVGImageElement>(null);
+
+  useEffect(() => {
+    const innerBox = innerBoxRef.current;
+    const outerBox = outerBoxRef.current;
+    const image = imageRef.current;
+    const box = boxRef.current;
+    if (!innerBox || !outerBox || !image || !box) return;
+
+    const innerLen = innerBox.getTotalLength();
+    const outerLen = outerBox.getTotalLength();
+
+    gsap.set(innerBox, {
+      strokeDasharray: innerLen,
+      strokeDashoffset: innerLen,
+    });
+    gsap.set(outerBox, {
+      strokeDasharray: outerLen,
+      strokeDashoffset: outerLen,
+    });
+
+    gsap.set(image, { scale: 1.08, clipPath: "inset(0% 0% 0% 0% round 0px)", willChange: "clip-path, transform" });
+    gsap.set(box, { opacity: 0 });
+
+    const tl = gsap.timeline({ delay: 0.3 });
+    const duration = 1.2;
+    const delay = 0.1;
+
+    tl.to(image, {
+      scale: 1,
+      duration: duration + 0.6,
+      ease: "power1.out",
+    }, 0);
+
+    tl.to(innerBox, {
+      strokeDashoffset: 0,
+      duration: duration,
+      ease: "power3.inOut",
+    }, 0);
+
+    tl.to(outerBox, {
+      strokeDashoffset: 0,
+      duration: duration - delay,
+      ease: "power3.inOut",
+    }, delay);
+
+    // 2. Box materializes first
+    const fadeDuration = 0.6;
+    tl.to(box, {
+      opacity: 1,
+      duration: fadeDuration,
+      ease: "power2.out",
+      onComplete: () => {
+        innerBox.remove();
+        outerBox.remove();
+      },
+    }, duration);
+
+    // 3. Then crop + shrink after box is fully visible
+    const cropStart = duration + fadeDuration;
+    const cropDuration = 0.8;
+
+    tl.to(image, {
+      clipPath: `inset(${(593 / 1920) * 100}% ${(174 / 1080) * 100}% ${(594 / 1920) * 100}% ${(173 / 1080) * 100}% round 6px)`,
+      duration: cropDuration,
+      ease: cubicBezier(0.33, 1, 0.68, 1),
+    }, cropStart);
+
+    tl.to(box, {
+      scale: 841 / 937,
+      svgOrigin: "539.5 959.5",
+      duration: cropDuration,
+      ease: cubicBezier(0.16, 1, 0.3, 1),
+    }, cropStart);
+
+    return () => {
+      tl.kill();
+    };
+  }, []);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
+    <div className="flex items-center justify-center h-screen bg-[#C1D4E5] p-8">
+      <div className="relative h-full max-h-full aspect-[9/16] rounded-lg shadow-2xl overflow-hidden bg-[#C1D4E5]">
         <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
+          ref={imageRef}
+          src="/woman-swimming.jpg"
+          alt="Woman swimming"
+          fill
+          className="object-cover"
           priority
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+
+        {/* SVG overlay for line-drawing animation */}
+        <svg
+          className="absolute inset-0 w-full h-full"
+          viewBox="0 0 1080 1920"
+          fill="none"
+        >
+          <rect
+            ref={innerBoxRef}
+            x="173"
+            y="593"
+            width="733"
+            height="733"
+            rx="6"
+            stroke="white"
+            strokeWidth="4"
+          />
+          <rect
+            ref={outerBoxRef}
+            x="71.5"
+            y="491.5"
+            width="937"
+            height="937"
+            rx="6"
+            stroke="white"
+            strokeWidth="4"
+          />
+          {/* Box frame materializes on top of the drawn lines */}
+          <image
+            ref={boxRef}
+            href="/w42-box.png"
+            x={71 - 937 * 0.0619}
+            y={491 - 937 * 0.0619}
+            width={937 + 937 * 0.0619 + 937 * 0.0053}
+            height={937 + 937 * 0.0619 + 937 * 0.0053}
+          />
+        </svg>
+      </div>
     </div>
   );
 }
