@@ -52,7 +52,8 @@ export async function POST(request: Request) {
         controller.enqueue(encoder.encode(`data: ${JSON.stringify(msg)}\n\n`));
       };
 
-      const child = spawn("node", ["scripts/export-video.mjs"], {
+      const scriptPath = [rootDir, "scripts", "export-video.mjs"].join(path.sep);
+      const child = spawn(process.execPath, [scriptPath], {
         cwd: rootDir,
         stdio: "pipe",
       });
