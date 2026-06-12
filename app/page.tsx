@@ -2,6 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import gsap from "gsap";
+import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
+import { Label } from "@/components/ui/label";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 export default function Home() {
   const imageRef = useRef<HTMLImageElement>(null);
@@ -18,8 +22,12 @@ export default function Home() {
   const [bgColor, setBgColor] = useState("#C1D4E5");
   const [objectPos, setObjectPos] = useState({ x: 50, y: 50 });
   const [imageScale, setImageScale] = useState(100);
+  const [boxVariant, setBoxVariant] = useState<"hell" | "black">("hell");
   const [isExporting, setIsExporting] = useState(false);
   const [exportLog, setExportLog] = useState<string[]>([]);
+
+  const boxAsset = boxVariant === "hell" ? "/box-top-view-hell.png" : "/box-top-view-black.png";
+  const strokeColor = boxVariant === "hell" ? "white" : "#1a1a1a";
 
   const imageScaleRef = useRef(imageScale);
   imageScaleRef.current = imageScale;
@@ -293,13 +301,13 @@ export default function Home() {
     >
       {/* Toolbar */}
       {!isExportMode && (
-        <div className="flex flex-col gap-3 bg-white/90 backdrop-blur rounded-xl p-4 shadow-lg w-56">
-          <button
+        <div className="flex flex-col gap-4 bg-white/90 backdrop-blur rounded-xl p-4 shadow-lg w-56">
+          <Button
             onClick={() => fileInputRef.current?.click()}
-            className="px-4 py-2 bg-gray-900 text-white text-sm rounded-lg hover:bg-gray-700 transition-colors cursor-pointer"
+            className="w-full"
           >
             Bild wählen
-          </button>
+          </Button>
           <input
             ref={fileInputRef}
             type="file"
@@ -308,45 +316,61 @@ export default function Home() {
             onChange={handleFileChange}
           />
 
-          <label className="flex items-center gap-2 text-sm text-gray-700">
-            <span>Farbe</span>
-            <input
-              type="color"
-              value={bgColor}
-              onChange={(e) => setBgColor(e.target.value)}
-              className="w-8 h-8 rounded cursor-pointer border-0"
-            />
-          </label>
+          <div className="space-y-2">
+            <Label>Box</Label>
+            <ToggleGroup
+              value={[boxVariant]}
+              onValueChange={(v) => { if (v.length) setBoxVariant(v[v.length - 1] as "hell" | "black"); }}
+              variant="outline"
+              spacing={0}
+              className="w-full"
+            >
+              <ToggleGroupItem value="hell" className="flex-1 text-xs">
+                Hell
+              </ToggleGroupItem>
+              <ToggleGroupItem value="black" className="flex-1 text-xs">
+                Schwarz
+              </ToggleGroupItem>
+            </ToggleGroup>
+          </div>
 
-          <label className="flex flex-col gap-1 text-sm text-gray-700">
-            <span>Zoom {imageScale}%</span>
-            <input
-              type="range"
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              Farbe
+              <input
+                type="color"
+                value={bgColor}
+                onChange={(e) => setBgColor(e.target.value)}
+                className="w-6 h-6 rounded cursor-pointer border-0"
+              />
+            </Label>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Zoom {imageScale}%</Label>
+            <Slider
               min={100}
               max={200}
-              value={imageScale}
-              onChange={(e) => setImageScale(Number(e.target.value))}
-              className="w-full cursor-pointer"
+              value={[imageScale]}
+              onValueChange={(v) => setImageScale(Array.isArray(v) ? v[0] : v)}
             />
-          </label>
+          </div>
 
-          <button
-            onClick={replay}
-            className="px-4 py-2 bg-gray-100 text-gray-900 text-sm rounded-lg hover:bg-gray-200 transition-colors cursor-pointer"
-          >
-            Replay
-          </button>
-
-          <button
-            onClick={exportVideo}
-            disabled={isExporting}
-            className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-500 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isExporting ? "Exportiert..." : "Export MP4"}
-          </button>
+          <div className="flex gap-2">
+            <Button variant="secondary" onClick={replay} className="flex-1">
+              Replay
+            </Button>
+            <Button
+              onClick={exportVideo}
+              disabled={isExporting}
+              className="flex-1"
+            >
+              {isExporting ? "..." : "Export"}
+            </Button>
+          </div>
 
           {exportLog.length > 0 && (
-            <div className="mt-1 max-h-40 overflow-y-auto rounded-lg bg-gray-900 p-2 text-xs text-green-400 font-mono leading-relaxed">
+            <div className="max-h-40 overflow-y-auto rounded-lg bg-gray-900 p-2 text-xs text-green-400 font-mono leading-relaxed">
               {exportLog.map((line, i) => (
                 <div key={i}>{line}</div>
               ))}
@@ -407,7 +431,7 @@ export default function Home() {
             width="733"
             height="733"
             rx="6"
-            stroke="white"
+            stroke={strokeColor}
             strokeWidth="4"
           />
           <rect
@@ -417,13 +441,13 @@ export default function Home() {
             width="937"
             height="937"
             rx="6"
-            stroke="white"
+            stroke={strokeColor}
             strokeWidth="4"
           />
           {/* Box frame materializes on top of the drawn lines */}
           <image
             ref={boxRef}
-            href="/w42-box.png"
+            href={boxAsset}
             x={71 - 937 * 0.0619}
             y={491 - 937 * 0.0619}
             width={937 + 937 * 0.0619 + 937 * 0.0053}
