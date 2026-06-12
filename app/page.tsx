@@ -477,13 +477,17 @@ export default function Home() {
             strokeWidth="4"
           />
           {/* Box frame materializes on top of the drawn lines */}
+          {/* Positioned so the box face (excluding drop shadow) aligns with the outer SVG rect.
+              Both PNGs are 3142x3127 with the box face at ~(2,2)-(2805,2814) and
+              shadow extending to the right and bottom of the image. */}
           <image
             ref={boxRef}
             href={boxAsset}
-            x={71 - 937 * 0.0619}
-            y={491 - 937 * 0.0619}
-            width={937 + 937 * 0.0619 + 937 * 0.0053}
-            height={937 + 937 * 0.0619 + 937 * 0.0053}
+            x={71}
+            y={491}
+            width={1050}
+            height={1042}
+            preserveAspectRatio="none"
           />
         </svg>
       </div>
