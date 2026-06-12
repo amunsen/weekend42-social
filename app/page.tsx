@@ -441,11 +441,11 @@ export default function Home() {
             background: bgColor,
             clipPath: `polygon(
               0% 0%, 100% 0%, 100% 100%, 0% 100%, 0% 0%,
-              ${(173 / 1080) * 100}% ${(593 / 1920) * 100}%,
-              ${(173 / 1080) * 100}% ${(1326 / 1920) * 100}%,
-              ${(906 / 1080) * 100}% ${(1326 / 1920) * 100}%,
-              ${(906 / 1080) * 100}% ${(593 / 1920) * 100}%,
-              ${(173 / 1080) * 100}% ${(593 / 1920) * 100}%
+              ${(186 / 1080) * 100}% ${(602 / 1920) * 100}%,
+              ${(186 / 1080) * 100}% ${(1315 / 1920) * 100}%,
+              ${(895 / 1080) * 100}% ${(1315 / 1920) * 100}%,
+              ${(895 / 1080) * 100}% ${(602 / 1920) * 100}%,
+              ${(186 / 1080) * 100}% ${(602 / 1920) * 100}%
             )`,
           }}
         />
@@ -458,35 +458,31 @@ export default function Home() {
         >
           <rect
             ref={innerBoxRef}
-            x="173"
-            y="593"
-            width="733"
-            height="733"
-            rx="6"
+            x="186"
+            y="602"
+            width="709"
+            height="713"
+            rx="11"
             stroke={strokeColor}
-            strokeWidth="4"
+            strokeWidth="3"
           />
           <rect
             ref={outerBoxRef}
-            x="71.5"
-            y="491.5"
+            x="72"
+            y="492"
             width="937"
             height="937"
             rx="6"
             stroke={strokeColor}
             strokeWidth="4"
           />
-          {/* Box frame materializes on top of the drawn lines */}
-          {/* Positioned so the box face (excluding drop shadow) aligns with the outer SVG rect.
-              Both PNGs are 3142x3127 with the box face at ~(2,2)-(2805,2814) and
-              shadow extending to the right and bottom of the image. */}
           <image
             ref={boxRef}
             href={boxAsset}
-            x={71}
-            y={491}
-            width={1050}
-            height={1042}
+            x={72}
+            y={488}
+            width={1049}
+            height={1044}
             preserveAspectRatio="none"
           />
         </svg>
