@@ -74,8 +74,8 @@ export default function Home() {
 
     // Reset all elements
     gsap.set([innerBox, outerBox], { visibility: "visible" });
-    gsap.set(innerBox, { strokeDasharray: innerLen, strokeDashoffset: innerLen });
-    gsap.set(outerBox, { strokeDasharray: outerLen, strokeDashoffset: outerLen });
+    gsap.set(innerBox, { strokeDasharray: innerLen, strokeDashoffset: innerLen + 2 });
+    gsap.set(outerBox, { strokeDasharray: outerLen, strokeDashoffset: outerLen + 2 });
     const baseScale = imageScaleRef.current / 100;
     gsap.set(image, { scale: 1.08 * baseScale });
     gsap.set(box, { opacity: 0 });
@@ -462,7 +462,7 @@ export default function Home() {
             y="602"
             width="709"
             height="713"
-            rx="11"
+            rx="18"
             stroke={strokeColor}
             strokeWidth="3"
           />
