@@ -73,7 +73,7 @@ export default function Home() {
     const outerLen = outerBox.getTotalLength();
 
     // Reset all elements
-    gsap.set([innerBox, outerBox], { visibility: "visible" });
+    gsap.set([innerBox, outerBox], { visibility: "visible", opacity: 0 });
     gsap.set(innerBox, { strokeDasharray: innerLen, strokeDashoffset: innerLen + 2 });
     gsap.set(outerBox, { strokeDasharray: outerLen, strokeDashoffset: outerLen + 2 });
     const baseScale = imageScaleRef.current / 100;
@@ -90,6 +90,12 @@ export default function Home() {
       scale: 1 * baseScale,
       duration: duration + 0.6,
       ease: "power1.out",
+    }, 0);
+
+    tl.to([innerBox, outerBox], {
+      opacity: 1,
+      duration: 0.4,
+      ease: "power2.out",
     }, 0);
 
     tl.to(innerBox, {
