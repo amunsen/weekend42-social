@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Separator } from "@/components/ui/separator";
+import { ImageUp, RotateCcw, Download, Sun, Moon } from "lucide-react";
 
 export default function Home() {
   const imageRef = useRef<HTMLImageElement>(null);
@@ -301,13 +303,7 @@ export default function Home() {
     >
       {/* Toolbar */}
       {!isExportMode && (
-        <div className="flex flex-col gap-4 bg-white/90 backdrop-blur rounded-xl p-4 shadow-lg w-56">
-          <Button
-            onClick={() => fileInputRef.current?.click()}
-            className="w-full"
-          >
-            Bild wählen
-          </Button>
+        <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-3 shadow-lg w-56">
           <input
             ref={fileInputRef}
             type="file"
@@ -316,8 +312,22 @@ export default function Home() {
             onChange={handleFileChange}
           />
 
-          <div className="space-y-2">
-            <Label>Box</Label>
+          {/* Image upload */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => fileInputRef.current?.click()}
+            className="w-full justify-start gap-2"
+          >
+            <ImageUp className="size-4" />
+            Bild wählen
+          </Button>
+
+          <Separator />
+
+          {/* Box variant */}
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">Box</Label>
             <ToggleGroup
               value={[boxVariant]}
               onValueChange={(v) => { if (v.length) setBoxVariant(v[v.length - 1] as "hell" | "black"); }}
@@ -325,29 +335,41 @@ export default function Home() {
               spacing={0}
               className="w-full"
             >
-              <ToggleGroupItem value="hell" className="flex-1 text-xs">
+              <ToggleGroupItem value="hell" className="flex-1 gap-1.5 text-xs">
+                <Sun className="size-3.5" />
                 Hell
               </ToggleGroupItem>
-              <ToggleGroupItem value="black" className="flex-1 text-xs">
+              <ToggleGroupItem value="black" className="flex-1 gap-1.5 text-xs">
+                <Moon className="size-3.5" />
                 Schwarz
               </ToggleGroupItem>
             </ToggleGroup>
           </div>
 
-          <div className="space-y-2">
-            <Label className="flex items-center gap-2">
-              Farbe
+          <Separator />
+
+          {/* Background color */}
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">Hintergrund</Label>
+            <div className="flex items-center gap-2">
               <input
                 type="color"
                 value={bgColor}
                 onChange={(e) => setBgColor(e.target.value)}
-                className="w-6 h-6 rounded cursor-pointer border-0"
+                className="w-8 h-8 rounded-md cursor-pointer border border-border p-0.5"
               />
-            </Label>
+              <span className="text-xs font-mono text-muted-foreground uppercase">{bgColor}</span>
+            </div>
           </div>
 
-          <div className="space-y-2">
-            <Label>Zoom {imageScale}%</Label>
+          <Separator />
+
+          {/* Zoom */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <Label className="text-xs text-muted-foreground">Zoom</Label>
+              <span className="text-xs font-mono text-muted-foreground">{imageScale}%</span>
+            </div>
             <Slider
               min={100}
               max={200}
@@ -356,25 +378,35 @@ export default function Home() {
             />
           </div>
 
-          <div className="flex gap-2">
-            <Button variant="secondary" onClick={replay} className="flex-1">
+          <Separator />
+
+          {/* Actions */}
+          <div className="flex gap-1.5">
+            <Button variant="outline" size="sm" onClick={replay} className="flex-1 gap-1.5">
+              <RotateCcw className="size-3.5" />
               Replay
             </Button>
             <Button
+              size="sm"
               onClick={exportVideo}
               disabled={isExporting}
-              className="flex-1"
+              className="flex-1 gap-1.5"
             >
+              <Download className="size-3.5" />
               {isExporting ? "..." : "Export"}
             </Button>
           </div>
 
+          {/* Export log */}
           {exportLog.length > 0 && (
-            <div className="max-h-40 overflow-y-auto rounded-lg bg-gray-900 p-2 text-xs text-green-400 font-mono leading-relaxed">
-              {exportLog.map((line, i) => (
-                <div key={i}>{line}</div>
-              ))}
-            </div>
+            <>
+              <Separator />
+              <div className="max-h-32 overflow-y-auto rounded-md bg-muted p-2 text-[10px] text-muted-foreground font-mono leading-relaxed">
+                {exportLog.map((line, i) => (
+                  <div key={i}>{line}</div>
+                ))}
+              </div>
+            </>
           )}
         </div>
       )}
