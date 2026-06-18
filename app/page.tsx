@@ -126,6 +126,9 @@ export default function Home() {
       ease: "power2.out",
     }, duration + fadeDuration);
 
+    // Hold final frame for 3 seconds so the video doesn't end abruptly
+    tl.to({}, { duration: 3 });
+
     tlRef.current = tl;
 
     if (isExport) {
