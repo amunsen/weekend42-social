@@ -29,20 +29,23 @@ export async function POST(request: Request) {
   const rootDir = process.cwd();
   const settingsPath = path.join(rootDir, ".export-settings.json");
 
-  // If imageSrc is a data URL, write it to a temp file
-  let { imageSrc, ...rest } = body;
-  if (imageSrc && imageSrc.startsWith("data:")) {
-    const match = imageSrc.match(/^data:image\/(\w+);base64,(.+)$/);
-    if (match) {
-      const ext = match[1] === "jpeg" ? "jpg" : match[1];
-      const tmpPath = path.join(rootDir, "public", `tmp-export.${ext}`);
-      fs.writeFileSync(tmpPath, Buffer.from(match[2], "base64"));
-      imageSrc = `/tmp-export.${ext}`;
-    }
-  }
+  // Data URLs are written to temp files in /public so Puppeteer can load them
+  const materialize = (src: unknown, name: string): unknown => {
+    if (typeof src !== "string" || !src.startsWith("data:")) return src;
+    const match = src.match(/^data:image\/(\w+);base64,(.+)$/);
+    if (!match) return src;
+    const ext = match[1] === "jpeg" ? "jpg" : match[1];
+    fs.writeFileSync(path.join(rootDir, "public", `${name}.${ext}`), Buffer.from(match[2], "base64"));
+    return `/${name}.${ext}`;
+  };
+  const settings = {
+    ...body,
+    imageSrc: materialize(body.imageSrc, "tmp-export"),
+    image2Src: materialize(body.image2Src, "tmp-export-2"),
+  };
 
   // Write settings for Puppeteer to read
-  fs.writeFileSync(settingsPath, JSON.stringify({ ...rest, imageSrc }));
+  fs.writeFileSync(settingsPath, JSON.stringify(settings));
 
   // Stream export script output back to the client
   const stream = new ReadableStream({

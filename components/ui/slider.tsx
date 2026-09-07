@@ -8,8 +8,12 @@ function Slider({
   value,
   min = 0,
   max = 100,
+  marks,
   ...props
-}: SliderPrimitive.Root.Props) {
+}: SliderPrimitive.Root.Props & {
+  /** Values to highlight on the track, e.g. a default or original value. */
+  marks?: number[]
+}) {
   const _values = Array.isArray(value)
     ? value
     : Array.isArray(defaultValue)
@@ -37,6 +41,15 @@ function Slider({
             className="bg-primary select-none data-horizontal:h-full data-vertical:w-full"
           />
         </SliderPrimitive.Track>
+        {marks?.map((mark) => (
+          <span
+            key={mark}
+            data-slot="slider-mark"
+            aria-hidden
+            className="pointer-events-none absolute top-1/2 h-2.5 w-0.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-muted-foreground/50 data-horizontal:top-1/2"
+            style={{ left: `${((mark - min) / (max - min)) * 100}%` }}
+          />
+        ))}
         {Array.from({ length: _values.length }, (_, index) => (
           <SliderPrimitive.Thumb
             data-slot="slider-thumb"
